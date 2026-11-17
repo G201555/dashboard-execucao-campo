@@ -1,0 +1,622 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<title>Campanhas · Dashboard Nintendo</title>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="theme-color" content="#ffffff">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Nunito:wght@500;600;700;800;900&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg:#f5f5f5; --card:#ffffff; --border:#e6e6e6;
+    --text:#1d1d1d; --muted:#3a3a3a; --accent:#e60012; --accent-dark:#b3000e;
+    --pill:#f2f2f2; --pill-hover:#e8e8e8;
+    --navy:#161616; --navy2:#202020;
+    --ok:#2fae64; --warn:#e2a336; --bad:#e2453f;
+    --ok-bg:#e7f7ee; --warn-bg:#fdf3e3; --bad-bg:#fdeceb;
+    --radius:12px;
+    color-scheme: light;
+  }
+  *{box-sizing:border-box}
+  body{
+    margin:0; background:var(--bg); color:var(--text);
+    font:500 13px/1.45 "Nunito",-apple-system,"Segoe UI",Roboto,Arial,sans-serif;
+  }
+
+  /* ---------- topbar ---------- */
+  .topbar{
+    background:linear-gradient(180deg,#242424,#161616); border-bottom:1px solid #2e2e2e; padding:12px 20px;
+    display:flex; align-items:center; gap:12px; position:sticky; top:0; z-index:10;
+  }
+  .topbar .logo{
+    width:34px; height:34px; border-radius:50%; background:#fff;
+    display:flex; align-items:center; justify-content:center; font-weight:800; color:var(--accent); font-size:15px; flex:0 0 auto;
+  }
+  .topbar .txt{line-height:1.25}
+  .topbar .txt b{display:block; font-size:13px; color:#fff; letter-spacing:.03em}
+  .topbar .txt span{display:block; font-size:9px; color:#ff8f96; letter-spacing:.08em; font-weight:700}
+  .topbar .avatar{
+    width:32px; height:32px; border-radius:50%; background:#fff; color:var(--navy);
+    display:flex; align-items:center; justify-content:center; font-weight:800; font-size:13px; flex:0 0 auto;
+    border:2px solid rgba(255,255,255,.4); margin-left:auto;
+  }
+  .topbar button#logoutBtn{background:none; border:1px solid #3a3a3a; color:#b3b3b3; border-radius:6px; padding:6px 12px; font-size:11px; cursor:pointer}
+  .topbar button#logoutBtn:hover{color:#fff; border-color:#6e6e6e}
+
+  main{padding:20px; max-width:1400px; margin:0 auto}
+  h1.pagehead{font-size:21px; font-weight:800; letter-spacing:-.01em; margin:0 0 5px; text-wrap:balance}
+  .pagesub{color:var(--muted); font-size:12.5px; font-weight:500; line-height:1.5; margin-bottom:20px; max-width:640px}
+
+  /* ---------- cards / kpis ---------- */
+  .card{
+    background:var(--card); border:1px solid var(--border); border-radius:var(--radius);
+    padding:16px 18px; box-shadow:0 1px 2px rgba(20,25,40,.04);
+  }
+  .note{color:var(--muted); font-size:11.5px; margin:-6px 0 12px}
+  .panel{margin-bottom:14px}
+  .local-filter-row{display:flex; flex-wrap:wrap; gap:8px 20px}
+  .local-filter{display:flex; align-items:center; gap:8px; margin-bottom:14px}
+  .local-filter label{font-size:10.5px; text-transform:uppercase; letter-spacing:.04em; color:var(--muted); font-weight:700; white-space:nowrap}
+  .local-filter select{min-width:170px}
+  @media (max-width:640px){
+    .local-filter{flex-direction:column; align-items:flex-start; gap:5px; width:100%}
+    .local-filter select, .local-filter input{width:100%; min-width:0}
+  }
+
+  select, input[type=text], input[type=email], input[type=password]{
+    background:#fff; border:1px solid var(--border); color:var(--text);
+    border-radius:8px; padding:6px 10px; font-size:12px; min-width:110px;
+  }
+  select:focus-visible, input:focus-visible{outline:2px solid var(--accent); outline-offset:1px}
+
+  .toast{
+    position:fixed; left:50%; bottom:28px; transform:translateX(-50%) translateY(20px);
+    background:var(--navy); color:#fff; padding:10px 18px; border-radius:8px; font-size:12.5px; font-weight:600;
+    box-shadow:0 8px 24px rgba(20,25,40,.3); z-index:300; opacity:0; pointer-events:none;
+    transition:opacity .2s, transform .2s;
+  }
+  .toast.show{opacity:1; transform:translateX(-50%) translateY(0)}
+  @media (prefers-reduced-motion: reduce){ .toast{transition:none} }
+
+  .kpi-row{display:grid; grid-template-columns:repeat(auto-fit,minmax(190px,1fr)); gap:14px; margin-bottom:14px}
+  .kpi-card{border-left:4px solid var(--accent); padding:12px 14px}
+  .kpi-card .lbl{font-size:10.5px; text-transform:uppercase; letter-spacing:.04em; color:var(--muted); font-weight:700}
+  .kpi-card .val{font-size:22px; font-weight:800; margin-top:4px}
+  .kpi-card .meta{font-size:11px; color:var(--muted); margin-top:2px}
+  .kpi-card.ok{border-left-color:var(--ok)} .kpi-card.warn{border-left-color:var(--warn)} .kpi-card.bad{border-left-color:var(--bad)}
+
+  /* ---------- materiais implementados (chips) ---------- */
+  .material-chips{display:flex; flex-wrap:wrap; gap:10px; margin-bottom:14px}
+  .material-chip{
+    background:#fff; border:1px solid var(--border); border-radius:10px; padding:9px 16px;
+    min-width:130px; box-shadow:0 1px 2px rgba(20,25,40,.04);
+  }
+  .material-chip .lbl{font-size:10px; text-transform:uppercase; letter-spacing:.04em; color:var(--muted); font-weight:700}
+  .material-chip .val{font-size:18px; font-weight:800; margin-top:2px}
+
+  /* ---------- redes + carrossel ---------- */
+  .grid-2{display:grid; grid-template-columns:1fr 1fr; gap:14px; margin-bottom:14px; align-items:start}
+  @media(max-width:900px){.grid-2{grid-template-columns:1fr}}
+  .rank-list{max-height:280px; overflow-y:auto}
+  .rank-row{display:grid; grid-template-columns:1fr auto; gap:10px; align-items:center; padding:5px 0; border-bottom:1px solid #f1f3f8; font-size:12px}
+  .rank-row:last-child{border-bottom:none}
+  .rank-row .nome{font-weight:600}
+  .rank-row .sub{color:var(--muted); font-size:10.5px; margin-top:1px}
+  .rank-row .barwrap{background:#eef0f5; border-radius:4px; height:5px; margin-top:4px; overflow:hidden}
+  .rank-row .barwrap > div{height:100%}
+  .rank-row .taxa{font-weight:800; text-align:right; min-width:48px}
+
+  /* ---------- table ---------- */
+  table{width:100%; min-width:640px; border-collapse:collapse; font-size:11.5px}
+  th{
+    text-align:left; color:var(--muted); font-weight:700; font-size:10px;
+    text-transform:uppercase; letter-spacing:.04em; padding:6px 10px;
+    border-bottom:1px solid var(--border); white-space:nowrap;
+  }
+  td{padding:4px 10px; border-bottom:1px solid #f1f3f8; vertical-align:middle; white-space:nowrap; line-height:1.3}
+  td:nth-child(2){white-space:normal; min-width:160px}
+  tbody tr:hover{background:#f7f8fc}
+  .tag{display:inline-block; padding:2px 8px; border-radius:999px; font-size:10.5px; font-weight:700}
+  .tag.ok{background:var(--ok-bg); color:#1f8a4d}
+  .tag.bad{background:var(--bad-bg); color:#c9322c}
+  .tag.warn{background:var(--warn-bg); color:#8a6414}
+  :root{--obj-resto:#e3e3e3}
+  .obj-head{display:flex; align-items:baseline; gap:10px; flex-wrap:wrap; margin-bottom:12px}
+  .obj-num{font-size:34px; font-weight:900; line-height:1; font-variant-numeric:tabular-nums}
+  .obj-txt{font-size:13.5px; font-weight:700; color:var(--muted)}
+  .obj-bar{display:flex; gap:2px; height:26px; background:var(--card)}
+  .obj-seg{min-width:4px; border-radius:4px; cursor:default}
+  .obj-seg:hover{filter:brightness(.93)}
+  .obj-scale{display:flex; justify-content:space-between; font-size:11.5px; font-weight:700; color:var(--muted); margin-top:6px; font-variant-numeric:tabular-nums}
+  .obj-legenda{display:flex; flex-wrap:wrap; gap:8px 18px; font-size:12.5px; font-weight:600; margin-top:12px}
+  .obj-legenda .dot{display:inline-block; width:10px; height:10px; border-radius:50%; margin-right:6px; vertical-align:-1px}
+  .tag.muted{background:#eef0f5; color:var(--muted)}
+  .empty{color:var(--muted); text-align:center; padding:30px}
+
+  .btn-outline{
+    background:#fff; border:1px solid var(--border); color:var(--text); border-radius:8px;
+    padding:7px 14px; font-size:12px; font-weight:700; cursor:pointer;
+  }
+  .btn-outline:hover{border-color:var(--accent); color:var(--accent)}
+  .kpi-card[role="button"]{cursor:pointer}
+  .kpi-card[role="button"]:hover{background:#f7f8fc}
+  .kpi-card[role="button"]:focus-visible{outline:2px solid var(--accent); outline-offset:-2px}
+
+  /* ---------- login gate ---------- */
+  #loginGate{
+    position:fixed; inset:0; background:var(--navy); display:flex; align-items:center; justify-content:center; z-index:100;
+  }
+  #loginGate .box{
+    background:#fff; border-radius:var(--radius); padding:32px 28px; width:320px; box-shadow:0 12px 40px rgba(0,0,0,.35);
+  }
+  #loginGate .logo{
+    width:40px; height:40px; border-radius:10px; background:var(--accent); color:#fff; font-weight:800; font-size:18px;
+    display:flex; align-items:center; justify-content:center; margin-bottom:14px;
+  }
+  #loginGate h1{font-size:16px; margin:0 0 4px}
+  #loginGate p{color:var(--muted); font-size:12px; margin:0 0 18px}
+  #loginGate label{display:block; font-size:11px; font-weight:700; color:var(--muted); margin:12px 0 4px; text-transform:uppercase; letter-spacing:.03em}
+  #loginGate input{width:100%}
+  #loginGate button{
+    width:100%; margin-top:18px; background:var(--accent); color:#fff; border:none; border-radius:8px;
+    padding:10px; font-weight:700; font-size:13px; cursor:pointer;
+  }
+  #loginGate button:disabled{opacity:.6; cursor:default}
+  #loginGate .err{color:#c9322c; font-size:12px; margin-top:10px; min-height:16px}
+  #loginGate .nda{color:var(--muted); font-size:10.5px; margin-top:16px; line-height:1.4}
+
+  /* ---------- tema Nintendo (linguagem do nintendo.com/pt-br): branco, vermelho, pílulas ---------- */
+  td{font-variant-numeric:tabular-nums}
+  .nin-logo-img{display:block; height:46px; width:auto}
+  .topbar{
+    background:#fff; border-bottom:1px solid var(--border); box-shadow:0 2px 8px rgba(0,0,0,.04);
+    min-height:72px; padding:0 20px 0 0; gap:14px;
+  }
+  .topbar .brand-block{background:var(--accent); align-self:stretch; display:flex; align-items:center; padding:0 22px}
+  .topbar .logo{width:34px; height:34px; border-radius:0; object-fit:contain; background:none}
+  .topbar .txt b{font-size:15px; font-weight:900; color:var(--text); letter-spacing:0}
+  .topbar .txt span{font-size:11px; font-weight:800; color:var(--accent); letter-spacing:0}
+  .topbar .avatar{background:var(--pill); color:var(--text); border:2px solid #d4d4d4; width:36px; height:36px}
+  .topbar button#logoutBtn{background:var(--pill); border:none; color:var(--text); border-radius:999px; padding:9px 17px; font-size:12px; font-weight:800}
+  .topbar button#logoutBtn:hover{background:var(--pill-hover); color:var(--text)}
+  main{padding:26px 26px 32px}
+  h1.pagehead{font-size:28px; font-weight:900; letter-spacing:-.015em; margin-bottom:6px}
+  .pagesub{font-size:13.5px; font-weight:600}
+  .card{border:1px solid #ececec; border-radius:16px; box-shadow:0 2px 10px rgba(0,0,0,.04)}
+  .card-title{font-size:17px; font-weight:900; color:var(--text); margin:0 0 12px; letter-spacing:-.005em}
+  .kpi-card{border-left-width:5px}
+  .kpi-card .lbl{text-transform:none; letter-spacing:0; font-size:12.5px; font-weight:800}
+  .kpi-card .val{font-size:27px; font-weight:900}
+  .material-chip{border-radius:14px}
+  .material-chip .val{font-weight:900}
+  .btn-outline{background:var(--pill); border-color:transparent; border-radius:999px; font-weight:800; padding:9px 17px}
+  .btn-outline:hover{background:var(--pill-hover); border-color:transparent; color:var(--text)}
+  select, input[type=text]{border-radius:999px; background:var(--pill); border-color:transparent; font-weight:700; padding:8px 12px}
+  #loginGate{background:var(--accent)}
+  #loginGate .box{border-radius:20px; padding:34px 30px}
+  #loginGate .nin-logo-img{height:48px; border-radius:8px; margin-bottom:18px}
+  #loginGate h1{font-size:20px; font-weight:900}
+  #loginGate input{border-radius:999px; background:var(--pill); border-color:transparent; padding:10px 14px}
+  #loginGate button{border-radius:999px; font-weight:900; padding:11px}
+</style>
+</head>
+<body>
+
+<div id="loginGate">
+  <div class="box">
+    <img class="nin-logo-img" src="logo-nintendo.webp" alt="Nintendo" width="144" height="48">
+    <h1>Campanhas Nintendo</h1>
+    <p>Acesso restrito — dados protegidos por NDA do contrato.</p>
+    <form id="loginForm">
+      <label for="loginEmail">E-mail</label>
+      <input type="email" id="loginEmail" required autocomplete="username" spellcheck="false">
+      <label for="loginPassword">Senha</label>
+      <input type="password" id="loginPassword" required autocomplete="current-password">
+      <button type="submit" id="loginBtn">Entrar</button>
+      <div class="err" id="loginErr" aria-live="polite"></div>
+    </form>
+    <div class="nda">O acesso a esta página é individual e monitorado.</div>
+  </div>
+</div>
+
+<div id="toast" class="toast" role="status" aria-live="polite"></div>
+
+<div id="appRoot" style="display:none">
+  <header class="topbar">
+    <div class="brand-block"><img class="nin-logo-img" src="logo-nintendo.webp" alt="Nintendo" width="138" height="46"></div>
+    <img class="logo" src="icone-cogumelo.webp" alt="" width="34" height="34">
+    <div class="txt"><b>Campanhas</b><span>Trade execução</span></div>
+    <div class="avatar" id="avatarUser">N</div>
+    <button id="logoutBtn" type="button">Sair</button>
+  </header>
+
+  <main>
+    <h1 class="pagehead" id="pageTitle">Campanhas</h1>
+    <div class="pagesub" id="geradoEm">carregando…</div>
+
+    <div id="overviewCampanhas">
+      <div class="note">Implementação nas lojas, pela última resposta de cada campanha em andamento (respondida nos últimos 14 dias). Clique numa campanha pra ver o detalhe por loja e o MPDV implementado.</div>
+      <div class="kpi-row" id="kpisOverview"></div>
+    </div>
+
+    <div id="detalheCampanhaWrap" style="display:none">
+      <button type="button" class="btn-outline" id="btnVoltarOverview" style="margin-bottom:14px">← Todas as campanhas</button>
+      <div class="kpi-row" id="kpisCampanhaDetalhe"></div>
+      <div class="card panel">
+        <h2 class="card-title">Objetivo x alcançado</h2>
+        <div class="obj-head"><span class="obj-num" id="objAlcancado">—</span><span class="obj-txt" id="objTexto"></span></div>
+        <div class="obj-bar" id="objBar" role="img"></div>
+        <div class="obj-scale"><span>0</span><span id="objMeta"></span></div>
+        <div class="obj-legenda" id="objLegenda"></div>
+      </div>
+      <div class="material-chips" id="materiaisChips"></div>
+
+      <div class="grid-2">
+        <div class="card">
+          <h2 class="card-title">Motivos de não implementação</h2>
+          <div id="motivosCampanha" class="rank-list"></div>
+        </div>
+        <div class="card">
+          <h2 class="card-title">Materiais implementados</h2>
+          <div id="materiaisRankCampanha" class="rank-list"></div>
+        </div>
+      </div>
+
+      <div class="card panel">
+        <div class="note">Cada campanha usa seu próprio conjunto de materiais de PDV — as colunas de quantidade mudam conforme a campanha selecionada.</div>
+        <div class="local-filter-row" style="justify-content:space-between">
+          <div style="display:flex; flex-wrap:wrap; gap:8px 20px">
+            <div class="local-filter">
+              <label for="fCampanhaImplementou">Implementou</label>
+              <select id="fCampanhaImplementou">
+                <option value="">Todas</option>
+                <option value="SIM">Sim (inclui descartadas)</option>
+                <option value="DESCARTADO">Implementada e descartada pela loja</option>
+                <option value="NÃO">Não</option>
+              </select>
+            </div>
+            <div class="local-filter">
+              <label for="fCampanhaBusca">Buscar loja ou rede</label>
+              <input type="text" id="fCampanhaBusca" placeholder="Buscar loja ou rede…" autocomplete="off">
+            </div>
+          </div>
+          <button type="button" class="btn-outline" id="btnExportarCampanha" style="align-self:center">↓ Exportar CSV</button>
+        </div>
+        <div style="overflow-x:auto">
+          <table id="tabelaCampanhaDetalhe">
+            <thead><tr id="theadCampanhaDetalhe"></tr></thead>
+            <tbody id="tbodyCampanhaDetalhe"></tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  </main>
+</div>
+
+<script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-auth-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-firestore-compat.js"></script>
+<script>
+const firebaseConfig = {
+  projectId: "seu-projeto-firebase",
+  appId: "SEU_APP_ID",
+  storageBucket: "seu-projeto-firebase.firebasestorage.app",
+  apiKey: "SUA_API_KEY",
+  authDomain: "seu-projeto-firebase.firebaseapp.com",
+  messagingSenderId: "SEU_SENDER_ID",
+};
+firebase.initializeApp(firebaseConfig);
+const auth = firebase.auth();
+const db = firebase.firestore();
+
+let DADOS = { geradoEm:'', campanhas:[], campanhasDetalhe:[] };
+
+// esta página só precisa do doc "meta" — nada de carregar os chunks de loja
+// (ruptura/mobiliário/etc.) que o dashboard completo usa, então fica bem mais leve.
+async function carregarDados(){
+  const metaSnap = await db.collection('nintendo').doc('meta').get();
+  const meta = metaSnap.exists ? JSON.parse(metaSnap.data().json) : {};
+  DADOS = {
+    geradoEm: meta.geradoEm||'',
+    campanhas: meta.campanhas||[],
+    campanhasDetalhe: meta.campanhasDetalhe||[],
+  };
+}
+
+function asArray(v){ return Array.isArray(v) ? v : []; }
+const fmtPct = v => (v*100).toFixed(1) + '%';
+const fmtNum = v => new Intl.NumberFormat('pt-BR').format(v);
+// so manipulacao de texto, sem Date(), pra nao correr risco de fuso horario deslocar o dia.
+function fmtData(iso){
+  if (!iso) return '—';
+  const m = String(iso).match(/^(\d{4})-(\d{2})-(\d{2})(?:[ T](\d{2}:\d{2}))?/);
+  if (!m) return iso;
+  return m[4] ? `${m[3]}/${m[2]}/${m[1]} ${m[4]}` : `${m[3]}/${m[2]}/${m[1]}`;
+}
+function classePorFaixa(v, minOk, minWarn){
+  if (v >= minOk) return 'ok';
+  if (v >= minWarn) return 'warn';
+  return 'bad';
+}
+function tagSimNao(v){
+  if (v === 'SIM') return '<span class="tag ok">SIM</span>';
+  if (v === 'NÃO') return '<span class="tag bad">NÃO</span>';
+  return '<span class="tag muted">sem dado</span>';
+}
+// "material descartado pela loja": campanha foi implementada (conta como SIM no ETL),
+// mas o material nao esta mais la - marca propria pra nao confundir com SIM comum.
+function tagImplementou(l){
+  return l.descartado ? '<span class="tag warn">DESCARTADO</span>' : tagSimNao(l.implementada);
+}
+// barra unica empilhada: largura total = objetivo (lojas avaliadas); verde + amarelo = alcancado.
+function renderObjetivo(objetivo, alcancado, descartadas){
+  const segs = [
+    {lbl:'Implementadas', n:alcancado - descartadas, cor:'var(--ok)'},
+    {lbl:'Implementadas e descartadas pela loja', n:descartadas, cor:'var(--warn)'},
+    {lbl:'Não implementadas', n:objetivo - alcancado, cor:'var(--obj-resto)'},
+  ].filter(s=>s.n>0);
+  const pct = objetivo ? alcancado/objetivo : 0;
+  document.getElementById('objAlcancado').textContent = fmtNum(alcancado);
+  document.getElementById('objTexto').textContent = `de ${fmtNum(objetivo)} lojas do objetivo · ${fmtPct(pct)} alcançado`;
+  document.getElementById('objMeta').textContent = `Objetivo: ${fmtNum(objetivo)}`;
+  const bar = document.getElementById('objBar');
+  bar.setAttribute('aria-label', `Alcançado ${alcancado} de ${objetivo} lojas (${fmtPct(pct)})`);
+  bar.innerHTML = segs.map(s=>`<div class="obj-seg" style="flex:${s.n} 1 0; background:${s.cor}" title="${s.lbl}: ${fmtNum(s.n)} lojas (${fmtPct(objetivo ? s.n/objetivo : 0)})"></div>`).join('');
+  document.getElementById('objLegenda').innerHTML = segs.map(s=>
+    `<span><span class="dot" style="background:${s.cor}"></span>${s.lbl} <b>${fmtNum(s.n)}</b></span>`).join('');
+}
+function filtrarLojasCampanha(campanha){
+  const implSel = document.getElementById('fCampanhaImplementou').value;
+  const buscaSel = document.getElementById('fCampanhaBusca').value.trim().toUpperCase();
+  let lojas = campanha.lojas;
+  if (implSel === 'DESCARTADO') lojas = lojas.filter(l=>l.descartado);
+  else if (implSel) lojas = lojas.filter(l=>l.implementada===implSel);
+  if (buscaSel) lojas = lojas.filter(l=>l.nome.toUpperCase().includes(buscaSel) || l.rede.toUpperCase().includes(buscaSel));
+  return lojas;
+}
+function renderKpis(elId, kpis){
+  document.getElementById(elId).innerHTML = kpis.map(k=>
+    `<div class="card kpi-card ${k.cls}"><div class="lbl">${k.lbl}</div><div class="val">${k.val}</div>`
+    + (k.meta===undefined ? '' : `<div class="meta">${k.meta}</div>`)
+    + `</div>`
+  ).join('');
+}
+
+function renderOverview(){
+  const campanhas = asArray(DADOS.campanhas);
+  document.getElementById('kpisOverview').innerHTML = campanhas.length ? campanhas.map(c=>`
+    <div class="card kpi-card ${classePorFaixa(c.taxa, 0.7, 0.4)}" role="button" tabindex="0"
+         title="Ver lojas e MPDV implementado desta campanha" onclick="mostrarDetalhe(${c.formulario})"
+         onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();mostrarDetalhe(${c.formulario})}">
+      <div class="lbl">${c.nome}</div>
+      <div class="val">${fmtPct(c.taxa)}</div>
+      <div class="meta">${c.implementadas}/${c.lojasAvaliadas} lojas${c.descartadas ? ` (${c.descartadas} descartadas pela loja)` : ''} · desde ${fmtData(c.inicio)} · ver detalhe →</div>
+    </div>`).join('') : '<div class="empty">Nenhuma campanha ativa no momento.</div>';
+}
+
+let campanhaAtual = null;
+
+function mostrarDetalhe(formulario){
+  document.getElementById('overviewCampanhas').style.display = 'none';
+  document.getElementById('detalheCampanhaWrap').style.display = '';
+  campanhaAtual = String(formulario);
+  history.replaceState(null, '', '?campanha=' + formulario);
+  const campanha = asArray(DADOS.campanhasDetalhe).find(c=>String(c.formulario)===campanhaAtual);
+  document.getElementById('pageTitle').textContent = campanha ? campanha.nome : 'Campanhas';
+  renderCampanhaDetalhe();
+}
+
+function mostrarOverview(){
+  document.getElementById('detalheCampanhaWrap').style.display = 'none';
+  document.getElementById('overviewCampanhas').style.display = '';
+  document.getElementById('pageTitle').textContent = 'Campanhas';
+  history.replaceState(null, '', location.pathname);
+}
+
+function renderCampanhaDetalhe(){
+  const detalhe = asArray(DADOS.campanhasDetalhe);
+  if (!detalhe.length){
+    document.getElementById('kpisCampanhaDetalhe').innerHTML = '';
+    document.getElementById('theadCampanhaDetalhe').innerHTML = '';
+    document.getElementById('tbodyCampanhaDetalhe').innerHTML = '<tr><td class="empty">Nenhuma campanha ativa no momento.</td></tr>';
+    return;
+  }
+  const campanha = detalhe.find(c=>String(c.formulario)===campanhaAtual) || detalhe[0];
+
+  const lojas = filtrarLojasCampanha(campanha);
+
+  const total = campanha.lojas.length;
+  const implementadas = campanha.lojas.filter(l=>l.implementada==='SIM').length;
+  const descartadas = campanha.lojas.filter(l=>l.descartado).length;
+  const taxa = total ? implementadas/total : 0;
+  const totaisPorMaterial = {};
+  campanha.materiais.forEach(m=>{ totaisPorMaterial[m] = campanha.lojas.reduce((s,l)=>s+(l.materiais[m]||0),0); });
+
+  const kpis = [
+    {lbl:'Taxa de implementação', val:fmtPct(taxa), meta:`${fmtNum(implementadas)}/${fmtNum(total)} lojas`, cls:classePorFaixa(taxa,0.7,0.4)},
+    {lbl:'Lojas avaliadas', val:fmtNum(total), meta:'objetivo · respostas dos últimos 14 dias', cls:''},
+    {lbl:'Lojas implementadas', val:fmtNum(implementadas), cls:'ok'},
+    {lbl:'Implementadas e descartadas pela loja', val:fmtNum(descartadas), meta:'contam como implementadas', cls:descartadas?'warn':''},
+  ];
+  renderKpis('kpisCampanhaDetalhe', kpis);
+  renderObjetivo(total, implementadas, descartadas);
+
+  document.getElementById('materiaisChips').innerHTML = campanha.materiais.map(m=>`
+    <div class="material-chip">
+      <div class="lbl">${m}</div>
+      <div class="val">${fmtNum(totaisPorMaterial[m])}</div>
+    </div>`).join('');
+
+  renderMotivos(campanha);
+  renderMateriaisRank(campanha, totaisPorMaterial);
+
+  document.getElementById('theadCampanhaDetalhe').innerHTML =
+    `<th>Rede</th><th>Loja</th><th>UF</th><th>Implementou</th><th>Motivo</th>` +
+    campanha.materiais.map(m=>`<th>${m}</th>`).join('');
+
+  const colspan = 5 + campanha.materiais.length;
+  document.getElementById('tbodyCampanhaDetalhe').innerHTML = lojas.map(l=>`
+    <tr>
+      <td>${l.rede}</td><td>${l.nome}</td><td>${l.uf}</td>
+      <td>${tagImplementou(l)}</td>
+      <td>${l.motivo||'—'}</td>
+      ${campanha.materiais.map(m=>`<td>${fmtNum(l.materiais[m]||0)}</td>`).join('')}
+    </tr>`).join('') || `<tr><td colspan="${colspan}" class="empty">Sem lojas para o filtro atual.</td></tr>`;
+}
+
+// ---------- motivos de não implementação (derivado das lojas da campanha) ----------
+function renderMotivos(campanha){
+  const naoImpl = campanha.lojas.filter(l=>l.implementada==='NÃO');
+  const tally = {};
+  naoImpl.forEach(l=>{ if (l.motivo) tally[l.motivo] = (tally[l.motivo]||0)+1; });
+  const motivos = Object.entries(tally).map(([motivo,n])=>({motivo,n})).sort((a,b)=>b.n-a.n);
+  const maxN = motivos.length ? motivos[0].n : 1;
+
+  document.getElementById('motivosCampanha').innerHTML = motivos.length ? motivos.map(m=>`
+    <div class="rank-row">
+      <div>
+        <div class="nome">${m.motivo}</div>
+        <div class="sub">${fmtNum(m.n)}/${fmtNum(naoImpl.length)} lojas não implementadas</div>
+        <div class="barwrap"><div style="width:${(m.n/maxN*100).toFixed(0)}%; background:var(--bad)"></div></div>
+      </div>
+      <div class="taxa">${fmtNum(m.n)}</div>
+    </div>`).join('') : '<div class="empty">Sem motivo registrado para as lojas não implementadas.</div>';
+}
+
+// ---------- ranking de materiais implementados (mesmos totais dos chips, em lista) ----------
+function renderMateriaisRank(campanha, totaisPorMaterial){
+  const materiais = campanha.materiais
+    .map(m=>({material:m, qtd:totaisPorMaterial[m]||0}))
+    .sort((a,b)=>b.qtd-a.qtd);
+  const maxQtd = materiais.length ? Math.max(...materiais.map(m=>m.qtd), 1) : 1;
+
+  document.getElementById('materiaisRankCampanha').innerHTML = materiais.length ? materiais.map(m=>`
+    <div class="rank-row">
+      <div>
+        <div class="nome">${m.material}</div>
+        <div class="barwrap"><div style="width:${(m.qtd/maxQtd*100).toFixed(0)}%; background:var(--accent)"></div></div>
+      </div>
+      <div class="taxa">${fmtNum(m.qtd)}</div>
+    </div>`).join('') : '<div class="empty">Sem materiais registrados nessa campanha.</div>';
+}
+
+// ---------- exportar CSV (respeita os filtros aplicados na tabela) ----------
+let _toastTimer = null;
+function mostrarToast(msg){
+  const el = document.getElementById('toast');
+  el.textContent = msg;
+  el.classList.add('show');
+  clearTimeout(_toastTimer);
+  _toastTimer = setTimeout(()=>el.classList.remove('show'), 3000);
+}
+function paraCSV(rows, cols){
+  const header = cols.map(c=>c.lbl).join(';');
+  const linhas = rows.map(r=> cols.map(c=>{
+    let v = c.get ? c.get(r) : r[c.key];
+    if (v===null || v===undefined) v = '';
+    v = String(v).replace(/"/g,'""');
+    if (v.includes(';') || v.includes('"') || v.includes('\n')) v = '"'+v+'"';
+    return v;
+  }).join(';'));
+  return [header, ...linhas].join('\r\n');
+}
+function baixarCSV(nome, csvString){
+  const blob = new Blob(['﻿'+csvString], {type:'text/csv;charset=utf-8;'});
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url; a.download = nome;
+  document.body.appendChild(a); a.click(); document.body.removeChild(a);
+  URL.revokeObjectURL(url);
+}
+function exportarCampanhaCSV(){
+  const detalhe = asArray(DADOS.campanhasDetalhe);
+  const campanha = detalhe.find(c=>String(c.formulario)===campanhaAtual) || detalhe[0];
+  if (!campanha) return;
+
+  const lojas = filtrarLojasCampanha(campanha);
+
+  if (!lojas.length){ mostrarToast('Nenhuma linha pra exportar com os filtros atuais.'); return; }
+
+  const cols = [
+    {lbl:'Rede', key:'rede'}, {lbl:'Loja', key:'nome'}, {lbl:'UF', key:'uf'},
+    {lbl:'Implementou', get:l=>l.descartado?'SIM (DESCARTADO PELA LOJA)':l.implementada}, {lbl:'Motivo', get:l=>l.motivo||''},
+    ...campanha.materiais.map(m=>({lbl:m, get:l=>l.materiais[m]||0})),
+  ];
+  const csv = paraCSV(lojas, cols);
+  const nomeArquivo = campanha.nome.toLowerCase().replace(/[^a-z0-9]+/g,'_').replace(/^_|_$/g,'');
+  baixarCSV(`${nomeArquivo}_${DADOS.geradoEm.slice(0,10)||'hoje'}.csv`, csv);
+  mostrarToast(`CSV gerado: ${lojas.length} linha${lojas.length===1?'':'s'} exportada${lojas.length===1?'':'s'}.`);
+}
+
+function init(){
+  document.getElementById('geradoEm').textContent = DADOS.geradoEm ? `Atualizado em ${DADOS.geradoEm}` : '';
+
+  const detalhe = asArray(DADOS.campanhasDetalhe);
+  renderOverview();
+
+  // ?campanha=<formulario> permite abrir direto no detalhe de uma campanha
+  // especifica (usado pelo link "Ver lojas" do dashboard principal) — sem
+  // o parametro, a pagina abre na lista de campanhas ativas.
+  const alvo = new URLSearchParams(location.search).get('campanha');
+  if (alvo && detalhe.some(c=>String(c.formulario)===alvo)) mostrarDetalhe(alvo);
+
+  document.getElementById('btnVoltarOverview').addEventListener('click', mostrarOverview);
+  document.getElementById('fCampanhaImplementou').addEventListener('change', renderCampanhaDetalhe);
+  document.getElementById('btnExportarCampanha').addEventListener('click', exportarCampanhaCSV);
+  let t;
+  document.getElementById('fCampanhaBusca').addEventListener('input', ()=>{ clearTimeout(t); t=setTimeout(renderCampanhaDetalhe,150); });
+}
+
+// ---------- gate de login ----------
+const loginForm = document.getElementById('loginForm');
+const loginErr = document.getElementById('loginErr');
+const loginBtn = document.getElementById('loginBtn');
+let inicializado = false;
+
+loginForm.addEventListener('submit', async (ev)=>{
+  ev.preventDefault();
+  loginErr.textContent = '';
+  loginBtn.disabled = true;
+  loginBtn.textContent = 'Entrando...';
+  try {
+    await auth.signInWithEmailAndPassword(
+      document.getElementById('loginEmail').value.trim(),
+      document.getElementById('loginPassword').value
+    );
+  } catch (e) {
+    loginErr.textContent = 'E-mail ou senha inválidos.';
+    loginBtn.disabled = false;
+    loginBtn.textContent = 'Entrar';
+  }
+});
+
+document.getElementById('logoutBtn').addEventListener('click', ()=>auth.signOut());
+
+auth.onAuthStateChanged(async (user)=>{
+  if (user) {
+    document.getElementById('loginGate').style.display = 'none';
+    document.getElementById('appRoot').style.display = '';
+    document.getElementById('avatarUser').textContent = (user.email||'N').charAt(0).toUpperCase();
+    if (!inicializado) {
+      document.getElementById('geradoEm').textContent = 'CARREGANDO DADOS...';
+      try {
+        await carregarDados();
+        init();
+        inicializado = true;
+      } catch (e) {
+        document.getElementById('geradoEm').textContent = 'ERRO AO CARREGAR DADOS';
+        console.error(e);
+      }
+    }
+  } else {
+    document.getElementById('loginGate').style.display = 'flex';
+    document.getElementById('appRoot').style.display = 'none';
+    loginBtn.disabled = false;
+    loginBtn.textContent = 'Entrar';
+  }
+});
+</script>
+</body>
+</html>

@@ -1,0 +1,25 @@
+rules_version = '2';
+service cloud.firestore {
+  function autorizado() {
+    return request.auth != null
+      && request.auth.token.email in [
+        'usuario@exemplo.com',
+        'usuario@exemplo.com',
+        'usuario@exemplo.com',
+        'usuario@exemplo.com',
+        'usuario@exemplo.com',
+        'usuario@exemplo.com',
+        'usuario@exemplo.com'
+      ];
+  }
+  match /databases/{database}/documents {
+    match /nintendo/{doc} {
+      allow read: if autorizado();
+      allow write: if false;
+    }
+    match /{document=**} {
+      allow read: if false;
+      allow write: if false;
+    }
+  }
+}

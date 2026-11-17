@@ -1,0 +1,30 @@
+{
+  "hosting": [
+    {
+      "target": "dashboard",
+      "public": "public",
+      "ignore": [
+        "firebase.json",
+        "**/.*",
+        "tools/**",
+        "dados/**",
+        "dashboard.html",
+        "public-campanhas/**"
+      ]
+    },
+    {
+      "target": "campanhas",
+      "public": "public-campanhas",
+      "ignore": [
+        "firebase.json",
+        "**/.*"
+      ]
+    }
+  ],
+  "firestore": {
+    "database": "(default)",
+    "location": "southamerica-east1",
+    "rules": "firestore.rules",
+    "indexes": "firestore.indexes.json"
+  }
+}
